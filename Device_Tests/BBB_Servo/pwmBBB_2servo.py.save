@@ -1,0 +1,42 @@
+#from: http://www.toptechboy.com/tutorial/beaglebone-black-lesson-6-control-pwm-signals-on-gpio-pins-from-python/
+
+#import Adafruit_BBIO.PWM as PWM
+#import Adafruit_BBIO.GPIO as GPIO
+#GPIO.setup("P8_13", GPIO.OUT)
+#SERVO_1="P9_14"
+#pwm_min = 5
+#pwm_max = 10
+#freq = 50 #Hz
+#servo_1.start(SERVO_1,0,freq)
+
+class Servo(PWM):
+	def __init__(self):
+		#self.pin  = pin
+		self.freq = 50 #Hz
+		#self.start(self.pin,0,frq)
+		self.pwm_min = 5
+		self.pwm_max = 10
+
+	import Adafruit_BBIO.PWM as PWM
+
+	def set(angle):
+		if angle < 0:
+			angle = 0
+		elif angle > 180:
+			angle = 180
+		duty = angle/36.0+ pwm_min
+		if duty > pwm_max:
+			duty = pwm_max
+		self.set_duty_cycle(self.pin, duty)
+		print "duty", duty
+#for i in range(0,5):
+
+try:
+	Servo_1 = Servo()#.start("P9_14",0,50)
+	while True:
+		 angle=input("What Duty Cycle Would You Like (0-100)? ")
+		 print "angle ",angle
+		 Servo_1.set(angle)
+except:
+	 PWM.stop(myPWM)
+	 PWM.cleanup()

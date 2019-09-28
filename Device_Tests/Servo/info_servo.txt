@@ -1,0 +1,8 @@
+02.05.19
+
+- Servo funktioniert mit Testgerät, bewegt sich auch im Aufbau
+- max. Strom gemessen = 450mA bei max. Geschwindigkeit (40 beim Testgerät)
+- starke Spannungsschwankungen beim schalten des Servos -> führt vermutlich zum nicht-bewegen, 
+	wenn er über den Pi angesprochen wird. 
+- das zittern kommt vermutlich dadurch zu stande, dass die Spannung einbricht 
+- viele ELKOs (4*1000uF) helfen etwas, aber nicht viel. Also schaltet trotzdem nicht beim Pi!

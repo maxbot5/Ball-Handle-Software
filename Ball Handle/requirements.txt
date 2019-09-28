@@ -1,0 +1,8 @@
+os
+time
+matplotlib.pyplot
+numpy
+smbus
+Adafruit_BBIO.GPIO
+Adafruit_BBIO.PWM
+
