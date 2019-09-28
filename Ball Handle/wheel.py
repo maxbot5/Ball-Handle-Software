@@ -1,5 +1,4 @@
 import time
-
 import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.PWM as PWM
 
@@ -33,21 +32,14 @@ class Wheel():
     def __init__(self, pin_en, pin_dir, pin_pwm, freq=F_MOTOR, start_duty=0, voltage=VOLTAGE_WHEEL,
                  slip_ideal=SLIP_IDEAL, slip_crit=SLIP_CRITICAL, v_min=V_ROB_MIN, v_max=V_ROB_MAX):
         self.freq = freq
-        # self.duty = dutycycle
-        # self.port = port
-        # self.Wheel_1 = Pwm.start(port, start_duty, freq)
-        # self.r = r_wheel
+
         self.start_duty = start_duty
         self.V_set = 0
         self.V_min = v_min
         self.V_max = v_max
         self.V_now = 0
-        # self.i_M2R = i_M2W  # gear between motor and wheel
-        # self.i_R2B = 1 / r_wheel * r_ball  # gear between ball and wheel
-        # self.gear = self.i_W2B * self.i_M2W #ist FALSCH, NEU berechnen!!!
         self.gear_rpm = (1 / 7) * 19.500  # normalized rotational speed of motor in rpm
         self.gear_hz = (1 / (7 * 8)) * (26 * 100)  # same but in Hz
-        # self.n_now = self.V_now * self.gear
         self.dir = 1
         self.n_set = 0
         self.n_new = 0
@@ -68,7 +60,6 @@ class Wheel():
 
     def motor_init(self):
         # GPIO initialisieren
-        #GPIO.setmode(BCM)
         GPIO.setup(self.pwmpin, GPIO.OUT)
         GPIO.setup(self.enablepin, GPIO.OUT)
         GPIO.setup(self.directionpin, GPIO.OUT)
@@ -76,17 +67,6 @@ class Wheel():
         GPIO.output(self.enablepin, GPIO.HIGH)
         # PWM-Frequenz auf 53.6 kHz setzen
         PWM.start(self.pwmpin,0, self.freq)
-        # PWM starten, Servo auf 0 Grad
-        #self.start(0)
-
-    # bounding the slipping to keep friction between wheel and ball
-    def slipping_bound(self, v_set, v_old):
-        V_new = v_set * self.slip_factor_ideal  # ideal slipping is 20%
-        if V_new > v_old * self.slip_factor_crit_max:  # critical slipping is assumed to 40% (1/1-s_crit) = 1/(1-0.4) = 1.6667
-            V_new = v_old * self.slip_factor_crit_max
-        elif V_new < v_old * self.slip_factor_crit_min:
-            V_new = v_old * self.slip_factor_crit_min
-        return V_new
 
     # transform incoming velocity in mm TO motor rotational speed
     def mmps2rpm(self, Vel):
@@ -115,13 +95,21 @@ class Wheel():
     def run(self):
         self.n_set = self.gear_rpm * abs(self.V_set)
         #print("n_set", self.n_set)
-        if self.n_old > SLIP_THRESHOLD:  # offset, Ball muss gewissen geschwindigkeit haben, ansonsten kein anfahren mit dem ball möglich
-            self.n_new = self.slipping_bound(self.n_set, self.n_old)
-        else:
-            self.n_new = self.n_set
-
         self.set_dir()
         self.set_motor(self.n_new)
+
+    def pause(self,state):
+        PWM.set_duty_cycle(self.pwmpin, 0)
+        if state is OFF:
+            GPIO.output(self.enablepin, GPIO.HIGH)
+        else:
+            GPIO.output(self.enablepin, GPIO.LOW)
+
+    def end_routine(self):
+        PWM.stop(PIN_PWM_WHEEL_LEFT)
+        PWM.stop(PIN_PWM_WHEEL_RIGHT)
+        PWM.stop()
+        PWM.cleanup()
 
     def hand_control(self):
         try:
@@ -143,7 +131,7 @@ class Wheel():
             self.stop()
             self.cleanup()
 
-'''
+
 def test_wheels(sim_mode=False):
     print("init wheels")
     wheel_left = Wheel(pin_en=PIN_EN_WHEEL_LEFT, pin_dir=PIN_DIR_WHEEL_LEFT, pin_pwm=PIN_PWM_WHEEL_LEFT)
@@ -157,15 +145,12 @@ def test_wheels(sim_mode=False):
         wheel_left.run()
         wheel_right.run()
 
+    while(True):
+        try:
+            test_wheels(sim_mode=True)
+        except KeyboardInterrupt:
+            PWM.stop(PIN_PWM_WHEEL_LEFT)
+            PWM.stop(PIN_PWM_WHEEL_RIGHT)
+            PWM.stop()
+            PWM.cleanup()
 
-# if __name__ == "__main":
-
-while(True):
-    try:
-        test_wheels(sim_mode=True)
-    except KeyboardInterrupt:
-        PWM.stop(PIN_PWM_WHEEL_LEFT)
-        PWM.stop(PIN_PWM_WHEEL_RIGHT)
-        PWM.stop()
-        PWM.cleanup()
-'''
