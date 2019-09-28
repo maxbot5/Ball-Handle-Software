@@ -2,31 +2,6 @@ import time
 import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.PWM as PWM
 
-# ball
-R_BALL = 114.2
-# wheel
-R_WHEEL = 40
-SLIP_IDEAL = 0.2
-SLIP_CRITICAL = 0.4
-SLIP_THRESHOLD = 100 # up this speed the sliping bound will occure
-I_M2W = 26 / 7
-F_MOTOR = 53600
-VOLTAGE_WHEEL = 3.3
-PIN_PWM_WHEEL_LEFT = "P8_13"
-PIN_DIR_WHEEL_LEFT = "P8_11"
-PIN_EN_WHEEL_LEFT = "P8_9"
-PIN_PWM_WHEEL_RIGHT = "P8_19"
-PIN_DIR_WHEEL_RIGHT = "P8_17"
-PIN_EN_WHEEL_RIGHT = "P8_15"
-V_left = 0
-V_right = 0
-# direction
-CCW = 0
-CW = 1
-# robot
-V_ROB_MAX = 2000
-V_ROB_MIN = -2000
-
 
 class Wheel():
     def __init__(self, pin_en, pin_dir, pin_pwm, freq=F_MOTOR, start_duty=0, voltage=VOLTAGE_WHEEL,
@@ -133,6 +108,31 @@ class Wheel():
 
 
 def test_wheels(sim_mode=False):
+    # ball
+    R_BALL = 114.2
+    # wheel
+    R_WHEEL = 40
+    SLIP_IDEAL = 0.2
+    SLIP_CRITICAL = 0.4
+    SLIP_THRESHOLD = 100  # up this speed the sliping bound will occure
+    I_M2W = 26 / 7
+    F_MOTOR = 53600
+    VOLTAGE_WHEEL = 3.3
+    PIN_PWM_WHEEL_LEFT = "P8_13"
+    PIN_DIR_WHEEL_LEFT = "P8_11"
+    PIN_EN_WHEEL_LEFT = "P8_9"
+    PIN_PWM_WHEEL_RIGHT = "P8_19"
+    PIN_DIR_WHEEL_RIGHT = "P8_17"
+    PIN_EN_WHEEL_RIGHT = "P8_15"
+    V_left = 0
+    V_right = 0
+    # direction
+    CCW = 0
+    CW = 1
+    # robot
+    V_ROB_MAX = 2000
+    V_ROB_MIN = -2000
+
     print("init wheels")
     wheel_left = Wheel(pin_en=PIN_EN_WHEEL_LEFT, pin_dir=PIN_DIR_WHEEL_LEFT, pin_pwm=PIN_PWM_WHEEL_LEFT)
     wheel_right = Wheel(pin_en=PIN_EN_WHEEL_RIGHT, pin_dir=PIN_DIR_WHEEL_RIGHT, pin_pwm=PIN_PWM_WHEEL_RIGHT)

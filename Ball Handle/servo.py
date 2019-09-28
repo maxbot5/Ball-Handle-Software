@@ -1,21 +1,12 @@
 # coding: utf8
 
-# import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.PWM as PWM
-
-# from Adafruit_BBIO.PWM import Pwm
-# import numpy as np
-# from Adafruit_BBIO.PWM import Pwm
-
-# GPIO.setup("P8_13", GPIO.OUT)
-
-
 
 '''
 Coordinate System
                 X
      0          |
-90___|___-90    |_ _ Y
+-90___|___90   |_ _ Y
 '''
 
 class Servo(object):
@@ -72,9 +63,7 @@ class Servo(object):
         '''
         print("name", self.name, "ang_rel calculated: ", self.ang_rel)
 
-    def run(self):
-
-
+    def process(self):
         self.calculate_servo_ang()
         '''
         if self.ang_abs < self.ang_offset - self.ang_crit:
@@ -129,6 +118,7 @@ class Servo(object):
         #if self.sim_mode == False:
         PWM.set_duty_cycle(self.port, self.duty)
         #time.sleep(0.2)
+
 
 
     def hand_control(self):
