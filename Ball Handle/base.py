@@ -93,7 +93,10 @@ class Processing(threading.Thread):
         #1. calculating impact point and the dribbel position
         def impact_Y():  # cutting point between ball motion and y-axle through ideal dribbel point
             # return -(((ball_measure.P_X - impact_point[0]) * -(ball_measure.V_Y / ball_measure.V_X)) + ball_measure.P_Y)
-            return -(-(self.ball_measure.P_X - self.impact_point[0]) * self.ball_measure.V_Y / self.ball_measure.V_X + self.ball_measure.P_Y)
+            if self.ball_measure.V_Y == 0 or self.ball_measure.V_X == 0:
+                return -(self.ball_measure.P_Y)
+            else:
+                return -(-(self.ball_measure.P_X - self.impact_point[0]) * self.ball_measure.V_Y / self.ball_measure.V_X + self.ball_measure.P_Y)
 
         def tangent_point(a, M_X, M_Y, P_X, P_Y):  # calculate the wheel position on servos motion circle
             # a = servo-radius
@@ -153,9 +156,9 @@ class Processing(threading.Thread):
             vy = self.robot.V_Y
             vx = self.robot.V_X
             if abs(self.ball_measure.V_X) > 50:
-                vx = self.robot.V_X + self.ball_measure.V_X
+                vx = self.robot.V_X - self.ball_measure.V_X
             if abs(self.ball_measure.V_Y) > 50:
-                vy = self.robot.V_Y + self.ball_measure.V_Y
+                vy = self.robot.V_Y - self.ball_measure.V_Y
 
             return vx, vy
 

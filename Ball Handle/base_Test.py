@@ -153,9 +153,9 @@ class Processing(threading.Thread):
             vy = self.robot.V_Y
             vx = self.robot.V_X
             if abs(self.ball_measure.V_X) > 50:
-                vx = self.robot.V_X + self.ball_measure.V_X
+                vx = self.robot.V_X - self.ball_measure.V_X
             if abs(self.ball_measure.V_Y) > 50:
-                vy = self.robot.V_Y + self.ball_measure.V_Y
+                vy = self.robot.V_Y - self.ball_measure.V_Y
 
             return vx, vy
 
