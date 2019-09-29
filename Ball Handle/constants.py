@@ -19,6 +19,10 @@ ideal_line = 375
 ball_distance_max = 400
 impact_point = (375, 0)
 DRIBBEL_POINT_X = 375
+ball_status = 0
+FAR_BALL = 1
+NEAR_BALL = 2
+HAVE_BALL = 3
 
 '''
 Wheel specific
@@ -66,5 +70,8 @@ SERVO_ANG_DRIBBEL_LEFT = -54
 SERVO_ANG_DRIBBEL_RIGHT = 54
 WAIT_FOR_SERVO = 0.2 #1sek = 1000 ms
 #position of servos rotation centre in robot cs
-SERVO_POS_LEFT = (200,-100)
-SERVO_POS_RIGHT = (200,100)
+SERVO_POS_LEFT = (200, -100)
+SERVO_POS_RIGHT = (200, 100)
+
+if __name__ == '__main__':
+    pass

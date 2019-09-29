@@ -1,7 +1,7 @@
 import time
 import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.PWM as PWM
-
+from constants import *
 
 class Wheel():
     def __init__(self, pin_en, pin_dir, pin_pwm, freq=F_MOTOR, start_duty=0, voltage=VOLTAGE_WHEEL,
@@ -154,3 +154,5 @@ def test_wheels(sim_mode=False):
             PWM.stop()
             PWM.cleanup()
 
+if __name__ == '__main__':
+    test_wheels()

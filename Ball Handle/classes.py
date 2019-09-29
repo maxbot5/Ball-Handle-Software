@@ -284,3 +284,5 @@ class Servo(object):
         setServo_R(ang_right + offset_servo_R)
 
 '''
+if __name__ == '__main__':
+    pass

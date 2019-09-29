@@ -1,6 +1,7 @@
 # coding: utf8
 
 import Adafruit_BBIO.PWM as PWM
+from constants import *
 
 '''
 Coordinate System
@@ -11,9 +12,9 @@ Coordinate System
 
 class Servo(object):
     def __init__(self, name, port, ang_min, ang_max, ang_crit, ang_start, ang_dribbel,
-                 ang_offset, p_x, p_y, sim_mode=False, voltage=SERVO_VOLTAGE, radius=SERVO_RADIUS, freq=SERVO_FREQ,
+                 ang_offset, p_x, p_y, pwm_crit_min, pwm_crit_max, sim_mode=False, voltage=SERVO_VOLTAGE, radius=SERVO_RADIUS, freq=SERVO_FREQ,
                  start_duty=7.5,
-                 pwm_min=5, pwm_max=10, pwm_crit_min, pwm_crit_max):
+                 pwm_min=5, pwm_max=10):
         # self.pwm = PWM.start(port,start_duty,freq)
         self.sim_mode = sim_mode
         if not self.sim_mode:
@@ -176,5 +177,5 @@ def testing():
         PWM.stop(SERVO_PORT_LEFT)
         PWM.stop(SERVO_PORT_RIGHT)
         PWM.cleanup()
-
-testing()
+if __name__ == '__main__':
+    testing()
