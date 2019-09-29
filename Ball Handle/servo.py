@@ -1,7 +1,7 @@
 # coding: utf8
 
 import Adafruit_BBIO.PWM as PWM
-from constants import *
+import constants as const
 
 '''
 Coordinate System
@@ -10,9 +10,9 @@ Coordinate System
 -90___|___90   |_ _ Y
 '''
 
-class Servo(object):
+class Servo():
     def __init__(self, name, port, ang_min, ang_max, ang_crit, ang_start, ang_dribbel,
-                 ang_offset, p_x, p_y, pwm_crit_min, pwm_crit_max, sim_mode=False, voltage=SERVO_VOLTAGE, radius=SERVO_RADIUS, freq=SERVO_FREQ,
+                 ang_offset, p_x, p_y, pwm_crit_min, pwm_crit_max, sim_mode=False, voltage=const.SERVO_VOLTAGE, radius=const.SERVO_RADIUS, freq=const.SERVO_FREQ,
                  start_duty=7.5,
                  pwm_min=5, pwm_max=10):
         # self.pwm = PWM.start(port,start_duty,freq)
@@ -123,9 +123,9 @@ class Servo(object):
 
 
     def hand_control(self):
-        ang = input("set angle for ",self.name,": ")
+        ang = input("set angle for ", self.name, ": ")
         self.ang_set = float(ang)
-        self.run()
+        self.process()
         '''
         self.duty = self.ang_abs * self.pwm_factor + self.pwm_min
 

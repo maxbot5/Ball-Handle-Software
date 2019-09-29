@@ -21,7 +21,8 @@ stop_threads = False
 BUF_SIZE = 1
 imuQueue = LifoQueue(BUF_SIZE)
 camQueue = LifoQueue(BUF_SIZE)
-outputQueue = LifoQueue(BUF_SIZE)
+wheelQueue = LifoQueue(BUF_SIZE)
+servoQueue = LifoQueue(BUF_SIZE)
 '''
 wheel_leftQueue = LifoQueue(BUF_SIZE)
 wheel_rightQueue = LifoQueue(BUF_SIZE)
@@ -40,18 +41,13 @@ class Input(threading.Thread):
         global dead
 
         print("Start Input...")
-        #while(not dead):
-        try:
+        while(True):
             if not imuQueue.full() : #and int-pin imu auslesen
                 #imu.process()  Muss noch erstellt werden!! queue in die imu class einfügen und direkt befüllen im process
                 imuQueue.put((1000, 0, 0)) #TEST DATA
             if not camQueue.full():
                 #camQueue.put(camQueue.process())
                 camQueue.put((2,400,0,100,0))  #TEST DATA
-
-                #break
-        except KeyboardInterrupt:
-            pass
 
 class Processing(threading.Thread):
     def __init__(self):
@@ -184,8 +180,8 @@ class Processing(threading.Thread):
         def accept_ball():
             print("accept_ball")
             # 1. set servos to the position that the ball hit the ball-handle in front
-            self.ang_set_left = self.ang2impact_left
-            self.ang_set_right = self.ang2impact_right
+            self.ang_set_left = np.rad2deg(self.ang2impact_left)
+            self.ang_set_right = np.rad2deg(self.ang2impact_right)
             # 2. set the wheels to spin in robots motion
             V_Ball_mag, ang = self.cart2pol((self.ball_set.V_X, self.ball_set.V_Y), self.impact_point)
             mag, Ball_ang = self.cart2pol((self.ball_set.P_X, self.ball_set.P_Y), self.impact_point)
@@ -214,8 +210,7 @@ class Processing(threading.Thread):
     def run(self):
         global dead, ball_status_new
         print("Start Processing...")
-        #while(not dead):
-        try:
+        while(True):
             #read sensordata
             if not imuQueue.empty() : #and int-pin imu auslesen
                 self.robot.V_X, self.robot.V_Y, self.robot.w_Z = imuQueue.get()
@@ -225,32 +220,47 @@ class Processing(threading.Thread):
                 print("PROCESS: self.ball_measure.V_X, self.ball_measure.V_Y", self.ball_measure.V_X, self.ball_measure.V_Y)
 
             #Execution:
-            if not outputQueue.full():
+            if not wheelQueue.full():
                 self.observer()
                 self.controller()
                 print("PROCESS: (self.ang_set_left, self.ang_set_right, self.V_set_left, self.V_set_right)", (self.ang_set_left, self.ang_set_right, self.V_set_left, self.V_set_right))
-                outputQueue.put((self.ang_set_left, self.ang_set_right, self.V_set_left, self.V_set_right))
+                wheelQueue.put((self.V_set_left, self.V_set_right))
+                if not servoQueue.full():
+                    servoQueue.put((self.ang_set_left, self.ang_set_right))
 
-        except KeyboardInterrupt:
-            return
 
 
-class Output(threading.Thread):
+class Servos(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        '''
+        self.servo_left = Servo(sim_mode=False, radius=65, name='left', port="P9_14", ang_min=-10, ang_max=85,
+                                ang_crit=SERVO_ANG_CRIT_LEFT,
+                                ang_start=SERVO_ANG_START, ang_dribbel=SERVO_ANG_DRIBBEL_LEFT, pwm_min=5.4, pwm_max=9.5,
+                                start_duty=8,
+                                ang_offset=SERVO_ANG_OFFSET_LEFT, p_x=194, p_y=-63.8)
+
+        self.servo_right = Servo(sim_mode=False, radius=65, name='right', port="P9_16", ang_min=-85, ang_max=10,
+                                 ang_crit=SERVO_ANG_OFFSET_RIGHT,
+                                 ang_start=SERVO_ANG_START, ang_dribbel=SERVO_ANG_DRIBBEL_RIGHT, pwm_min=6, pwm_max=9.5,
+                                 ang_offset=SERVO_ANG_OFFSET_RIGHT, p_x=194, p_y=63.8)
+        '''
+    def run(self):
+        while(True):
+            if not servoQueue.empty():
+                # self.servo_left.ang_set, self.servo_right.ang_set, self.wheel_left.V_set, self.wheel_right.V_set = outputQueue.get()
+                servo_left_ang_set, servo_right_ang_set = servoQueue.get()
+                print("servo_left_ang_set, servo_right_ang_set", servo_left_ang_set, servo_right_ang_set)
+                # self.servo_left.process(self.servo_left.ang_set)
+                # self.servo_right.process(self.servo_right.ang_set)
+                time.sleep(0.2)
+
+
+class Wheels(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         '''
         # Actuators
-        self.servo_left = Servo(sim_mode=False, radius=65, name='left', port="P9_14", ang_min=-10, ang_max=85,
-                           ang_crit=SERVO_ANG_CRIT_LEFT,
-                           ang_start=SERVO_ANG_START, ang_dribbel=SERVO_ANG_DRIBBEL_LEFT, pwm_min=5.4, pwm_max=9.5,
-                           start_duty=8,
-                           ang_offset=SERVO_ANG_OFFSET_LEFT, p_x=194, p_y=-63.8)
-
-        self.servo_right = Servo(sim_mode=False, radius=65, name='right', port="P9_16", ang_min=-85, ang_max=10,
-                            ang_crit=SERVO_ANG_OFFSET_RIGHT,
-                            ang_start=SERVO_ANG_START, ang_dribbel=SERVO_ANG_DRIBBEL_RIGHT, pwm_min=6, pwm_max=9.5,
-                            ang_offset=SERVO_ANG_OFFSET_RIGHT, p_x=194, p_y=63.8)
-
         self.wheel_left = Wheel(pin_en=PIN_EN_WHEEL_LEFT, pin_dir=PIN_DIR_WHEEL_LEFT, pin_pwm=PIN_PWM_WHEEL_LEFT)
         self.wheel_right = Wheel(pin_en=PIN_EN_WHEEL_RIGHT, pin_dir=PIN_DIR_WHEEL_RIGHT, pin_pwm=PIN_PWM_WHEEL_RIGHT)
         '''
@@ -258,60 +268,76 @@ class Output(threading.Thread):
     def run(self):
         global dead
         print("Start Output...")
-        #while(not dead):
-        try:
-            if not outputQueue.empty():
+        while(not KeyboardInterrupt):
+            if not wheelQueue.empty():
                 #self.servo_left.ang_set, self.servo_right.ang_set, self.wheel_left.V_set, self.wheel_right.V_set = outputQueue.get()
-                servo_left_ang_set, servo_right_ang_set, wheel_left_V_set, wheel_right_V_set = outputQueue.get()
-                print("servo_left_ang_set, servo_right_ang_set, wheel_left_V_set, wheel_right_V_set",servo_left_ang_set, servo_right_ang_set, wheel_left_V_set, wheel_right_V_set)
-                #self.servo_left.process(self.servo_left.ang_set)
-                #self.servo_right.process(self.servo_right.ang_set)
+                wheel_left_V_set, wheel_right_V_set = wheelQueue.get()
+                print("wheel_left_V_set, wheel_right_V_set", wheel_left_V_set, wheel_right_V_set)
+
                 #self.wheel_left.process(self.wheel_left.V_set)
                 #self.wheel_right.process(self.wheel_right.V_set)
-                '''
-                if not servo_leftQueue.empty() :
-                    self.servo_left.process(servo_leftQueue.get())
-                if not servo_rightQueue.empty():
-                    self.servo_left.process(servo_leftQueue.get())
-                if not wheel_leftQueue.empty():
-                   self.wheel_left.process(wheel_leftQueue.get())
-                if not wheel_rightQueue.empty():
-                    self.wheel_right.process(wheel_rightQueue.get())
-                '''
-        except KeyboardInterrupt:
-            pass
-                #break
 
 
 
-inputThread = Input()
-processingThread = Processing()
-outputThread = Output()
+
+
 
 def start_threads():
-    global dead
-    dead = False
-    print("start threads...")
-    #inputThread.daemon = True
-    #processingThread.daemon = True
-    #outputThread.daemon = True
+    threadlist = []
+    inputThread = Input()
+    threadlist.append(inputThread)
     inputThread.start()
-    inputThread.join()
+
+    processingThread = Processing()
+    threadlist.append(processingThread)
     processingThread.start()
+
+    servoThread = Servos()
+    threadlist.append(servoThread)
+    servoThread.start()
+
+    wheelThread = Wheels()
+    threadlist.append(wheelThread)
+    wheelThread.start()
+
+    inputThread.join()
     processingThread.join()
-    outputThread.start()
-    input("hit enter to kill thread")
+    servoThread.join()
+    wheelThread.join()
+
+def start_thread_2():
+    run_event = threading.Event()
+    run_event.set()
+
+    inputThread = Input()
+    inputThread.daemon = True
+    inputThread.start()
+
+    processingThread = Processing()
+    processingThread.daemon = True
+    processingThread.start()
+
+    servoThread = Servos()
+    servoThread.daemon = True
+    servoThread.start()
+
+    wheelThread = Wheels()
+    wheelThread.daemon = True
+    wheelThread.start()
+
+    try:
+        while (True):
+            time.sleep(1)
+    except KeyboardInterrupt:
+        run_event.clear()
+        inputThread.join()
+        processingThread.join()
+        servoThread.join()
+        wheelThread.join()
+
+
 
 if __name__ == '__main__':
-    for i in range(5):
-        start_threads()
-    #inputThread.join()
-    #processingThread.join()
-    #outputThread.join()
+    start_thread_2()
 
-    #stop_threads
-    #inputThread.join()
-    #processingThread.join()
-    #outputThread.join()
-    #sys.exit()
 
