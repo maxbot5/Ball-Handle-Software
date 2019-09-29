@@ -99,6 +99,7 @@ class PixyCam(Debug, Blocks, KalmanFilter):
         self.P_ball_Y_kf=0
         self.V_ball_X_kf=0
         self.V_ball_Y_kf=0
+        self.Ball_Status=0
 
 
 
@@ -236,14 +237,14 @@ class PixyCam(Debug, Blocks, KalmanFilter):
         # print("p_new_X, p_new_Y, v_new_X, v_new_Y, P_OLD", p_new_X, p_new_Y, v_new_X, v_new_Y, self.P_ball_old)
         return v_new_X, v_new_Y
 
-    def run(self):
-        global Ball_Status
+    def process(self):
+
 
         'MAIN'
         self.P_ball_new = self.read_raw()
         # print("P_new_ball", self.P_ball_new)
         if self.P_ball_new == None:
-            Ball_Status = FAR_BALL
+            self.Ball_Status = FAR_BALL
             self.detect_count = 0
             #return
         else:
@@ -269,13 +270,13 @@ class PixyCam(Debug, Blocks, KalmanFilter):
 
             # test for ball status
             if self.V_ball_X <= 0 and self.P_ball_X <= self.Ball_distance_Max:
-                Ball_Status = HAVE_BALL
+                self.Ball_Status = HAVE_BALL
 
             self.P_ball_old = self.P_ball_X, self.P_ball_Y
             #print("Pos in mm:", self.P_ball_X, self.P_ball_Y, "V in mm/s: ", self.V_ball_X, self.V_ball_Y)
             #print("Ball Status:", Ball_Status)
-            Ball_Status = NEAR_BALL
-        #return self.P_ball_X, self.P_ball_Y, self.V_ball_X, self.V_ball_Y
+            self.Ball_Status = NEAR_BALL
+        return self.Ball_Status, self.P_ball_X, self.P_ball_Y, self.V_ball_X, self.V_ball_Y
 
 '''
 
