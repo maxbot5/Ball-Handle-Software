@@ -41,7 +41,7 @@ class Input(threading.Thread):
         global dead
 
         print("Start Input...")
-        while(True):
+        while(not killpill):
             if not imuQueue.full() : #and int-pin imu auslesen
                 #imu.process()  Muss noch erstellt werden!! queue in die imu class einfügen und direkt befüllen im process
                 imuQueue.put((1000, 0, 0)) #TEST DATA
@@ -210,7 +210,7 @@ class Processing(threading.Thread):
     def run(self):
         global dead, ball_status_new
         print("Start Processing...")
-        while(True):
+        while(not killpill):
             #read sensordata
             if not imuQueue.empty() : #and int-pin imu auslesen
                 self.robot.V_X, self.robot.V_Y, self.robot.w_Z = imuQueue.get()
@@ -246,7 +246,7 @@ class Servos(threading.Thread):
                                  ang_offset=SERVO_ANG_OFFSET_RIGHT, p_x=194, p_y=63.8)
         '''
     def run(self):
-        while(True):
+        while(not killpill):
             if not servoQueue.empty():
                 # self.servo_left.ang_set, self.servo_right.ang_set, self.wheel_left.V_set, self.wheel_right.V_set = outputQueue.get()
                 servo_left_ang_set, servo_right_ang_set = servoQueue.get()
@@ -268,7 +268,7 @@ class Wheels(threading.Thread):
     def run(self):
         global dead
         print("Start Output...")
-        while(not KeyboardInterrupt):
+        while(not killpill):
             if not wheelQueue.empty():
                 #self.servo_left.ang_set, self.servo_right.ang_set, self.wheel_left.V_set, self.wheel_right.V_set = outputQueue.get()
                 wheel_left_V_set, wheel_right_V_set = wheelQueue.get()
@@ -306,38 +306,44 @@ def start_threads():
     wheelThread.join()
 
 def start_thread_2():
-    run_event = threading.Event()
-    run_event.set()
+    #run_event = threading.Event()
+    #run_event.set()
 
-    inputThread = Input()
-    inputThread.daemon = True
-    inputThread.start()
 
-    processingThread = Processing()
-    processingThread.daemon = True
-    processingThread.start()
 
-    servoThread = Servos()
-    servoThread.daemon = True
-    servoThread.start()
+    inputThread.join()
+    processingThread.join()
+    servoThread.join()
+    wheelThread.join()
 
-    wheelThread = Wheels()
-    wheelThread.daemon = True
-    wheelThread.start()
 
+if __name__ == '__main__':
     try:
-        while (True):
-            time.sleep(1)
-    except KeyboardInterrupt:
-        run_event.clear()
+        killpill = False
+        #start_thread_2()
+        inputThread = Input()
+        inputThread.daemon = True
+        inputThread.start()
+
+        processingThread = Processing()
+        processingThread.daemon = True
+        processingThread.start()
+
+        servoThread = Servos()
+        servoThread.daemon = True
+        servoThread.start()
+
+        wheelThread = Wheels()
+        wheelThread.daemon = True
+        wheelThread.start()
+        input("killpill activ with enter: ")
+        killpill = True
         inputThread.join()
         processingThread.join()
         servoThread.join()
         wheelThread.join()
-
-
-
-if __name__ == '__main__':
-    start_thread_2()
+        #stop_threads()
+    except KeyboardInterrupt:
+        exit(0)
 
 
