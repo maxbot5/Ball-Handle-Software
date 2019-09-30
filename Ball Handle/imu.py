@@ -90,10 +90,10 @@ class Imu(Debug, KalmanFilter):
         #print("kalmanfilter: ", self.kf.x[0], self.kf.x[1], self.kf.x[2])
         return self.kf.x[1]
 
-    def run(self):
+    def process(self):
         return self.kalman_filter(self.read_raw() - self.offset)
 
-
+'''
 def test_imu(save=False, draw=False):
     print("stat testing...")
     imu = Imu(sim_mode=False)
@@ -123,4 +123,4 @@ def test_imu(save=False, draw=False):
 
 # if __name__== "__main":
 test_imu(save=True)
-
+'''

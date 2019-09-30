@@ -1,10 +1,10 @@
 import time
 import numpy as np
-#import Adafruit_BBIO.PWM as PWM
-#from PixyCam import PixyCam
-#from imu import Imu
-#from servo import Servo
-#from wheel import Wheel
+import Adafruit_BBIO.PWM as PWM
+from PixyCam import PixyCam
+from imu import Imu
+from servo import Servo
+from wheel import Wheel
 from classes import State
 import constants as cons
 import threading
@@ -34,20 +34,20 @@ class Input(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         # create Sensor objects
-        #self.imu = Imu('P5_4', sim_mode=False)
-        #self.cam = PixyCam(sim_mode=False)
+        self.imu = Imu('P5_4', sim_mode=False)
+        self.cam = PixyCam(sim_mode=False)
 
     def run(self):
-        global dead
+        #global dead
 
         print("Start Input...")
         while(not killpill):
             if not imuQueue.full() : #and int-pin imu auslesen
-                #imu.process()  Muss noch erstellt werden!! queue in die imu class einfügen und direkt befüllen im process
-                imuQueue.put((1000, 0, 0)) #TEST DATA
+                imuQueue.put(self.imu.process())  #Muss noch erstellt werden!! queue in die imu class einfügen und direkt befüllen im process
+                #imuQueue.put((1000, 0, 0)) #TEST DATA
             if not camQueue.full():
-                #camQueue.put(camQueue.process())
-                camQueue.put((2,400,0,100,0))  #TEST DATA
+                camQueue.put(self.cam.process())
+                #camQueue.put((2,400,0,100,0))  #TEST DATA
 
 class Processing(threading.Thread):
     def __init__(self):
@@ -177,11 +177,19 @@ class Processing(threading.Thread):
         def wheel_velocity(ball_mag, ball_ang):
 
             print("controller: wheel velocity: ball_mag, ball_ang",  ball_mag, np.rad2deg(ball_ang))
+            '''
+            #Ursprüngliche Version
             v_left = -(ball_mag * (
                         np.cos(-self.ang_set_left + ball_ang) + np.sin(self.ang_set_left + ball_ang)))
             v_right = (ball_mag * (
                         np.cos(-self.ang_set_right + ball_ang) + np.sin(-self.ang_set_right + ball_ang)))
-            # print("wheel velocity x|Y", v_left, v_right)
+            '''
+            v_left = -(ball_mag * ((1 +
+                    np.cos(-self.ang_set_left + ball_ang)) + np.sin(self.ang_set_left + ball_ang)))
+            v_right = (ball_mag * ((1 +
+                    np.cos(-self.ang_set_right + ball_ang)) + np.sin(-self.ang_set_right + ball_ang)))
+
+            print("wheel velocity x|Y", v_left, v_right)
             # print("Ball |V|:",ball_mag, "Ball Ang:", ball_ang)
             return v_left, v_right
 
@@ -211,6 +219,8 @@ class Processing(threading.Thread):
             ball_status_old = cons.NEAR_BALL
             return
         if ball_status_new is cons.HAVE_BALL:
+            if ball_status_old is cons.NEAR_BALL:
+                return
             dribbel_ball()
             ball_status_old = cons.HAVE_BALL
             return
@@ -241,7 +251,7 @@ class Processing(threading.Thread):
 class Servos(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
-        '''
+
         self.servo_left = Servo(sim_mode=False, radius=65, name='left', port="P9_14", ang_min=-10, ang_max=85,
                                 ang_crit=SERVO_ANG_CRIT_LEFT,
                                 ang_start=SERVO_ANG_START, ang_dribbel=SERVO_ANG_DRIBBEL_LEFT, pwm_min=5.4, pwm_max=9.5,
@@ -252,26 +262,27 @@ class Servos(threading.Thread):
                                  ang_crit=SERVO_ANG_OFFSET_RIGHT,
                                  ang_start=SERVO_ANG_START, ang_dribbel=SERVO_ANG_DRIBBEL_RIGHT, pwm_min=6, pwm_max=9.5,
                                  ang_offset=SERVO_ANG_OFFSET_RIGHT, p_x=194, p_y=63.8)
-        '''
+
     def run(self):
         while(not killpill):
             if not servoQueue.empty():
                 # self.servo_left.ang_set, self.servo_right.ang_set, self.wheel_left.V_set, self.wheel_right.V_set = outputQueue.get()
-                servo_left_ang_set, servo_right_ang_set = servoQueue.get()
-                print("servo_left_ang_set, servo_right_ang_set", servo_left_ang_set, servo_right_ang_set)
-                # self.servo_left.process(self.servo_left.ang_set)
-                # self.servo_right.process(self.servo_right.ang_set)
+                #servo_left_ang_set, servo_right_ang_set = servoQueue.get()
+                self.servo_left.ang_set, self.servo_right.ang_set = servoQueue.get()
+                print("servo_left_ang_set, servo_right_ang_set", self.servo_left.ang_set, self.servo_right.ang_set)
+                self.servo_left.process(self.servo_left.ang_set)
+                self.servo_right.process(self.servo_right.ang_set)
                 time.sleep(0.2)
 
 
 class Wheels(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
-        '''
+
         # Actuators
         self.wheel_left = Wheel(pin_en=PIN_EN_WHEEL_LEFT, pin_dir=PIN_DIR_WHEEL_LEFT, pin_pwm=PIN_PWM_WHEEL_LEFT)
         self.wheel_right = Wheel(pin_en=PIN_EN_WHEEL_RIGHT, pin_dir=PIN_DIR_WHEEL_RIGHT, pin_pwm=PIN_PWM_WHEEL_RIGHT)
-        '''
+
 
     def run(self):
         global dead
@@ -279,50 +290,11 @@ class Wheels(threading.Thread):
         while(not killpill):
             if not wheelQueue.empty():
                 #self.servo_left.ang_set, self.servo_right.ang_set, self.wheel_left.V_set, self.wheel_right.V_set = outputQueue.get()
-                wheel_left_V_set, wheel_right_V_set = wheelQueue.get()
-                print("wheel_left_V_set, wheel_right_V_set", wheel_left_V_set, wheel_right_V_set)
+                self.wheel_left.V_set, self.wheel_right.V_set = wheelQueue.get()
+                print("wheel_left_V_set, wheel_right_V_set", self.wheel_left.V_set, self.wheel_right.V_set)
 
-                #self.wheel_left.process(self.wheel_left.V_set)
-                #self.wheel_right.process(self.wheel_right.V_set)
-
-
-
-
-
-
-def start_threads():
-    threadlist = []
-    inputThread = Input()
-    threadlist.append(inputThread)
-    inputThread.start()
-
-    processingThread = Processing()
-    threadlist.append(processingThread)
-    processingThread.start()
-
-    servoThread = Servos()
-    threadlist.append(servoThread)
-    servoThread.start()
-
-    wheelThread = Wheels()
-    threadlist.append(wheelThread)
-    wheelThread.start()
-
-    inputThread.join()
-    processingThread.join()
-    servoThread.join()
-    wheelThread.join()
-
-def start_thread_2():
-    #run_event = threading.Event()
-    #run_event.set()
-
-
-
-    inputThread.join()
-    processingThread.join()
-    servoThread.join()
-    wheelThread.join()
+                self.wheel_left.process(self.wheel_left.V_set)
+                self.wheel_right.process(self.wheel_right.V_set)
 
 
 if __name__ == '__main__':
