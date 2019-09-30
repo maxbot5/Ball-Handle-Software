@@ -140,20 +140,28 @@ class Processing(threading.Thread):
             (akutelle Umsetzung) Um den Ball im idealen Dribbelpunkt zu dribbeln, werden
             die folgenden Ballgeschwindigkeiten benötigt:
             '''
-            # Hinweis: eigentlich -Vball am Ende
+            # required motion
             '''
+            # with robots angular velocity from imu
             V_X = robot.V_X + np.cos(np.deg2rad(robot.w_Z)) * np.sqrt(
                 ball_measure.P_X * ball_measure.P_X + ball_measure.P_Y * ball_measure.P_Y) - ball_measure.V_X
             V_Y = robot.V_Y + np.sin(np.deg2rad(robot.w_Z)) * np.sqrt(
                 ball_measure.P_X * ball_measure.P_X + ball_measure.P_Y * ball_measure.P_Y) - ball_measure.V_Y
             '''
-            #current ball motion in relation to the ground, because we can only influence the motion to the robot directly.
-            #Thats why we need the robot motion
+
+            '''
+            current ball motion in relation to the ground, because we can only influence the motion to the robot directly.
+            Thats why we need the robot motion
+            In front the robot pushes the ball, so the wheel should turn slower then the balls total motion, because
+            the relatiiv motion to the ground comes from robot. But backwards, the ball have to spin faster 
+            for adjusting the missing robot pushing. Thats all taken with the sign in the following equation. 
+            '''
+            #without measured angular velocity from imu
             vy = self.robot.V_Y
             vx = self.robot.V_X
-            if abs(self.ball_measure.V_X) > 50:
+            if abs(self.ball_measure.V_X) > 30:
                 vx = self.robot.V_X - self.ball_measure.V_X
-            if abs(self.ball_measure.V_Y) > 50:
+            if abs(self.ball_measure.V_Y) > 30:
                 vy = self.robot.V_Y - self.ball_measure.V_Y
 
             return vx, vy
