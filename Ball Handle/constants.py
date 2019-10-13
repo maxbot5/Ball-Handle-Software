@@ -16,9 +16,9 @@ Ball specific
 r_ball = 114.8  # mm
 origin = (0, 0)
 ideal_line = 375
-ball_distance_max = 400
-impact_point = (375, 0)
-DRIBBEL_POINT_X = 375
+ball_distance_max = 370
+impact_point = (355, 0)
+DRIBBEL_POINT_X = 355
 ball_status = 0
 FAR_BALL = 1
 NEAR_BALL = 2
@@ -55,8 +55,8 @@ V_ROB_MIN = -2000
 Servo specifig
 '''
 # Servo constants
-SERVO_ANG_OFFSET_LEFT =  20  # np.deg2rad(-40) #60
-SERVO_ANG_OFFSET_RIGHT =  -30  # np.deg2rad(40) #35
+SERVO_ANG_OFFSET_LEFT =  10#40  # np.deg2rad(-40) #60
+SERVO_ANG_OFFSET_RIGHT =  0#-40  # np.deg2rad(40) #35
 SERVO_PORT_LEFT = "P9_14"
 SERVO_PORT_RIGHT = "P9_16"
 SERVO_FREQ = 50
@@ -72,6 +72,8 @@ WAIT_FOR_SERVO = 0.2 #1sek = 1000 ms
 #position of servos rotation centre in robot cs
 SERVO_POS_LEFT = (200, -100)
 SERVO_POS_RIGHT = (200, 100)
+
+
 
 if __name__ == '__main__':
     pass
