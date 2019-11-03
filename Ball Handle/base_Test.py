@@ -44,10 +44,10 @@ class Input(threading.Thread):
         try:
             if not imuQueue.full() : #and int-pin imu auslesen
                 #imu.process()  Muss noch erstellt werden!! queue in die imu class einfügen und direkt befüllen im process
-                imuQueue.put((0, 0, 0)) #TEST DATA
+                imuQueue.put((550, 0, 0)) #TEST DATA
             if not camQueue.full():
                 #camQueue.put(camQueue.process())
-                camQueue.put((3,350,0,100,50))  #TEST DATA
+                camQueue.put((3,350,0,50,100))  #TEST DATA
 
                 #break
         except KeyboardInterrupt:
@@ -153,9 +153,9 @@ class Processing(threading.Thread):
             vy = self.robot.V_Y
             vx = self.robot.V_X
             if abs(self.ball_measure.V_X) > 40:
-                vx = self.robot.V_X + self.ball_measure.V_X
+                vx = self.robot.V_X - self.ball_measure.V_X
             if abs(self.ball_measure.V_Y) > 40:
-                vy = self.robot.V_Y + self.ball_measure.V_Y
+                vy = self.robot.V_Y - self.ball_measure.V_Y
 
             return vx, vy
 
@@ -170,12 +170,19 @@ class Processing(threading.Thread):
         def wheel_velocity(ball_mag, ball_ang):
 
             print("controller: wheel velocity: ball_mag, ball_ang",  ball_mag, np.rad2deg(ball_ang))
+            '''
             v_left = (ball_mag * (
                         np.cos(-self.ang_set_left + ball_ang) + np.sin(self.ang_set_left + ball_ang)))
             v_right = (ball_mag * (
                         np.cos(-self.ang_set_right + ball_ang) + np.sin(-self.ang_set_right + ball_ang)))
-            # print("wheel velocity x|Y", v_left, v_right)
-            # print("Ball |V|:",ball_mag, "Ball Ang:", ball_ang)
+            '''
+            v_left = (ball_mag * (
+                        np.cos(-self.ang_set_left + ball_ang) + np.sin(self.ang_set_left + ball_ang)))
+            v_right = (ball_mag * (
+                        np.cos(-self.ang_set_right + ball_ang) + np.sin(-self.ang_set_right + ball_ang)))
+
+            print("wheel velocity L|R", v_left, v_right)
+            print("Ball |V|:",ball_mag, "Ball Ang:", np.rad2deg(ball_ang))
             return v_left, v_right
 
         def accept_ball():
@@ -193,17 +200,19 @@ class Processing(threading.Thread):
             self.ang_set_left = -np.deg2rad(cons.SERVO_ANG_DRIBBEL_LEFT)
             self.ang_set_right = -np.deg2rad(cons.SERVO_ANG_DRIBBEL_RIGHT)
             # 2. balance the ball in front of the ball handle by setting wheels spin to the mirror ang of the current ball motion
-            self.ball_pos_estimated = (self.robot.V_X +self.ball_measure.P_X + self.ball_measure.V_X, self.robot.V_Y + self.ball_measure.P_Y + self.ball_measure.V_Y)
-            print("impact pint dribbling: ", self.impact_point)
-            V_Ball_mag, ang = self.cart2pol((self.ball_set.V_X, self.ball_set.V_Y), self.ball_pos_estimated)
-            mag, Ball_ang = self.cart2pol((self.ball_set.V_X,0), (self.ball_set.V_Y,0))
-            print("Dribbling: Ball Angle:", np.rad2deg(Ball_ang))
+            self.ball_pos_estimated = (self.ball_measure.P_X + self.ball_measure.V_X, self.ball_measure.P_Y + self.ball_measure.V_Y)
+            print("BALL Pos estimated:", self.ball_pos_estimated)
+            print("impact point dribbling: ", self.impact_point)
+            #V_Ball_mag, ang = self.cart2pol((self.ball_set.V_X, self.ball_set.V_Y), self.ball_pos_estimated)
+            #print("V_Ball_mag, ang", V_Ball_mag, np.rad2deg(ang))
+            V_Ball_mag, Ball_ang = self.cart2pol((0,0),(self.ball_set.V_X,self.ball_set.V_Y))
+            print("Dribbling: Ball Angle:",V_Ball_mag,  np.rad2deg(Ball_ang))
             self.V_set_left, self.V_set_right = wheel_velocity(V_Ball_mag, Ball_ang)
 
             #check for wheel diff angle:
             X = np.cos(self.ang_set_left)*self.V_set_left + np.cos(self.ang_set_right)*self.V_set_right
             Y = np.sin(self.ang_set_left)*self.V_set_left + np.sin(self.ang_set_right)*self.V_set_right
-            ang_V_diff = 90 - np.rad2deg(np.arctan(Y/X))
+            ang_V_diff = 90 - np.rad2deg(np.arctan(X/Y))
             print("WHEEL diff angle:", ang_V_diff)
 
         if ball_status_new is cons.FAR_BALL:
@@ -271,7 +280,7 @@ class Output(threading.Thread):
         try:
             if not outputQueue.empty():
                 #self.servo_left.ang_set, self.servo_right.ang_set, self.wheel_left.V_set, self.wheel_right.V_set = outputQueue.get()
-                servo_left_ang_set, servo_right_ang_set, wheel_right_V_set, wheel_left_V_set = outputQueue.get()
+                servo_left_ang_set, servo_right_ang_set, wheel_left_V_set, wheel_right_V_set = outputQueue.get()
                 print("servo_left_ang_set, servo_right_ang_set, wheel_left_V_set, wheel_right_V_set",servo_left_ang_set, servo_right_ang_set, wheel_left_V_set, wheel_right_V_set)
                 #ang_wheel_diff = np.rad2deg(np.arccos(wheel_left_V_set/wheel_right_V_set))
                 print("wheel diff:", wheel_left_V_set/wheel_right_V_set)
