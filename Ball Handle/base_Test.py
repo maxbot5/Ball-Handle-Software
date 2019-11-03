@@ -47,7 +47,7 @@ class Input(threading.Thread):
                 imuQueue.put((1000, 0, 0)) #TEST DATA
             if not camQueue.full():
                 #camQueue.put(camQueue.process())
-                camQueue.put((2,400,0,100,0))  #TEST DATA
+                camQueue.put((3,350,0,150,50))  #TEST DATA
 
                 #break
         except KeyboardInterrupt:
@@ -152,9 +152,9 @@ class Processing(threading.Thread):
             #Thats why we need the robot motion
             vy = self.robot.V_Y
             vx = self.robot.V_X
-            if abs(self.ball_measure.V_X) > 50:
+            if abs(self.ball_measure.V_X) > 40:
                 vx = self.robot.V_X - self.ball_measure.V_X
-            if abs(self.ball_measure.V_Y) > 50:
+            if abs(self.ball_measure.V_Y) > 40:
                 vy = self.robot.V_Y - self.ball_measure.V_Y
 
             return vx, vy
@@ -170,7 +170,7 @@ class Processing(threading.Thread):
         def wheel_velocity(ball_mag, ball_ang):
 
             print("controller: wheel velocity: ball_mag, ball_ang",  ball_mag, np.rad2deg(ball_ang))
-            v_left = -(ball_mag * (
+            v_left = (ball_mag * (
                         np.cos(-self.ang_set_left + ball_ang) + np.sin(self.ang_set_left + ball_ang)))
             v_right = (ball_mag * (
                         np.cos(-self.ang_set_right + ball_ang) + np.sin(-self.ang_set_right + ball_ang)))
@@ -190,11 +190,19 @@ class Processing(threading.Thread):
         def dribbel_ball():
             print("dribbel_ball")
             # 1. fix the servos to ideal ball handle position
-            self.ang_set_left = cons.ANG_DRIBBEL_LEFT
-            self.ang_set_right = cons.ANG_DRIBBEL_RIGHT
+            self.ang_set_left = -np.deg2rad(cons.SERVO_ANG_DRIBBEL_LEFT)
+            self.ang_set_right = -np.deg2rad(cons.SERVO_ANG_DRIBBEL_RIGHT)
             # 2. balance the ball in front of the ball handle by setting wheels spin to the mirror ang of the current ball motion
-            self.V_set_left, self.V_set_right = wheel_velocity(
-                self.cart2pol((self.ball_set.V_X, self.ball_set.V_Y), self.impact_point))
+            self.ball_pos_estimated = (self.robot.V_X +self.ball_measure.P_X + self.ball_measure.V_X, self.robot.V_Y + self.ball_measure.P_Y + self.ball_measure.V_Y)
+            print("impact pint dribbling: ", self.impact_point)
+            V_Ball_mag, ang = self.cart2pol((self.ball_set.V_X, self.ball_set.V_Y), self.ball_pos_estimated)
+            mag, Ball_ang = self.cart2pol((self.ball_set.P_X, self.ball_set.P_Y), self.impact_point)
+            self.V_set_left, self.V_set_right = wheel_velocity(V_Ball_mag, Ball_ang)
+            #check for wheel diff angle:
+            X = np.cos(self.ang_set_left)*self.V_set_left + np.cos(self.ang_set_right)*self.V_set_right
+            Y = np.sin(self.ang_set_left)*self.V_set_left + np.sin(self.ang_set_right)*self.V_set_right
+            ang_V_diff = 90 - np.rad2deg(np.arctan(X/Y))
+            print("WHEEL diff angle:", ang_V_diff)
 
         if ball_status_new is cons.FAR_BALL:
             ball_status_old = cons.FAR_BALL
@@ -226,6 +234,8 @@ class Processing(threading.Thread):
                 self.observer()
                 self.controller()
                 print("PROCESS: (self.ang_set_left, self.ang_set_right, self.V_set_left, self.V_set_right)", (self.ang_set_left, self.ang_set_right, self.V_set_left, self.V_set_right))
+                self.ang_set_left = np.rad2deg(self.ang_set_left)
+                self.ang_set_right = np.rad2deg(self.ang_set_right)
                 outputQueue.put((self.ang_set_left, self.ang_set_right, self.V_set_left, self.V_set_right))
 
         except KeyboardInterrupt:
@@ -259,8 +269,11 @@ class Output(threading.Thread):
         try:
             if not outputQueue.empty():
                 #self.servo_left.ang_set, self.servo_right.ang_set, self.wheel_left.V_set, self.wheel_right.V_set = outputQueue.get()
-                servo_left_ang_set, servo_right_ang_set, wheel_left_V_set, wheel_right_V_set = outputQueue.get()
+                servo_left_ang_set, servo_right_ang_set, wheel_right_V_set, wheel_left_V_set = outputQueue.get()
                 print("servo_left_ang_set, servo_right_ang_set, wheel_left_V_set, wheel_right_V_set",servo_left_ang_set, servo_right_ang_set, wheel_left_V_set, wheel_right_V_set)
+                #ang_wheel_diff = np.rad2deg(np.arccos(wheel_left_V_set/wheel_right_V_set))
+                print("wheel diff:", wheel_left_V_set/wheel_right_V_set)
+                #print("wheel diff angle:", ang_wheel_diff)
                 #self.servo_left.process(self.servo_left.ang_set)
                 #self.servo_right.process(self.servo_right.ang_set)
                 #self.wheel_left.process(self.wheel_left.V_set)
