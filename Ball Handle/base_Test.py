@@ -44,10 +44,10 @@ class Input(threading.Thread):
         try:
             if not imuQueue.full() : #and int-pin imu auslesen
                 #imu.process()  Muss noch erstellt werden!! queue in die imu class einfügen und direkt befüllen im process
-                imuQueue.put((550, 0, 0)) #TEST DATA
+                imuQueue.put((1550, 0, 0)) #TEST DATA
             if not camQueue.full():
                 #camQueue.put(camQueue.process())
-                camQueue.put((3,350,0,50,100))  #TEST DATA
+                camQueue.put((3,350,0,550,200))  #TEST DATA
 
                 #break
         except KeyboardInterrupt:
@@ -175,12 +175,12 @@ class Processing(threading.Thread):
                         np.cos(-self.ang_set_left + ball_ang) + np.sin(self.ang_set_left + ball_ang)))
             v_right = (ball_mag * (
                         np.cos(-self.ang_set_right + ball_ang) + np.sin(-self.ang_set_right + ball_ang)))
+            
+            v_left = self.ball_set.V_X * (1 + 1/np.cos(self.ang_set_left) * np.sin(ball_ang/2))
+            v_right = self.ball_set.V_X * (1+ 1/np.cos(self.ang_set_right) * np.sin(-ball_ang/2))
             '''
-            v_left = (ball_mag * (
-                        np.cos(-self.ang_set_left + ball_ang) + np.sin(self.ang_set_left + ball_ang)))
-            v_right = (ball_mag * (
-                        np.cos(-self.ang_set_right + ball_ang) + np.sin(-self.ang_set_right + ball_ang)))
-
+            v_left = ball_mag / np.cos(self.ang_set_left) + ((ball_mag / np.cos(self.ang_set_left)) * np.sin(ball_ang / 2))
+            v_right = ball_mag / np.cos(self.ang_set_left) - ((ball_mag / np.cos(self.ang_set_right)) * np.sin(ball_ang / 2))
             print("wheel velocity L|R", v_left, v_right)
             print("Ball |V|:",ball_mag, "Ball Ang:", np.rad2deg(ball_ang))
             return v_left, v_right
