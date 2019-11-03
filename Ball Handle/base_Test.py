@@ -44,10 +44,10 @@ class Input(threading.Thread):
         try:
             if not imuQueue.full() : #and int-pin imu auslesen
                 #imu.process()  Muss noch erstellt werden!! queue in die imu class einfügen und direkt befüllen im process
-                imuQueue.put((1000, 0, 0)) #TEST DATA
+                imuQueue.put((0, 0, 0)) #TEST DATA
             if not camQueue.full():
                 #camQueue.put(camQueue.process())
-                camQueue.put((3,350,0,150,50))  #TEST DATA
+                camQueue.put((3,350,0,100,50))  #TEST DATA
 
                 #break
         except KeyboardInterrupt:
@@ -153,9 +153,9 @@ class Processing(threading.Thread):
             vy = self.robot.V_Y
             vx = self.robot.V_X
             if abs(self.ball_measure.V_X) > 40:
-                vx = self.robot.V_X - self.ball_measure.V_X
+                vx = self.robot.V_X + self.ball_measure.V_X
             if abs(self.ball_measure.V_Y) > 40:
-                vy = self.robot.V_Y - self.ball_measure.V_Y
+                vy = self.robot.V_Y + self.ball_measure.V_Y
 
             return vx, vy
 
@@ -196,12 +196,14 @@ class Processing(threading.Thread):
             self.ball_pos_estimated = (self.robot.V_X +self.ball_measure.P_X + self.ball_measure.V_X, self.robot.V_Y + self.ball_measure.P_Y + self.ball_measure.V_Y)
             print("impact pint dribbling: ", self.impact_point)
             V_Ball_mag, ang = self.cart2pol((self.ball_set.V_X, self.ball_set.V_Y), self.ball_pos_estimated)
-            mag, Ball_ang = self.cart2pol((self.ball_set.P_X, self.ball_set.P_Y), self.impact_point)
+            mag, Ball_ang = self.cart2pol((self.ball_set.V_X,0), (self.ball_set.V_Y,0))
+            print("Dribbling: Ball Angle:", np.rad2deg(Ball_ang))
             self.V_set_left, self.V_set_right = wheel_velocity(V_Ball_mag, Ball_ang)
+
             #check for wheel diff angle:
             X = np.cos(self.ang_set_left)*self.V_set_left + np.cos(self.ang_set_right)*self.V_set_right
             Y = np.sin(self.ang_set_left)*self.V_set_left + np.sin(self.ang_set_right)*self.V_set_right
-            ang_V_diff = 90 - np.rad2deg(np.arctan(X/Y))
+            ang_V_diff = 90 - np.rad2deg(np.arctan(Y/X))
             print("WHEEL diff angle:", ang_V_diff)
 
         if ball_status_new is cons.FAR_BALL:
