@@ -179,11 +179,22 @@ class Processing(threading.Thread):
             v_left = self.ball_set.V_X * (1 + 1/np.cos(self.ang_set_left) * np.sin(ball_ang/2))
             v_right = self.ball_set.V_X * (1+ 1/np.cos(self.ang_set_right) * np.sin(-ball_ang/2))
             '''
-            v_left = ball_mag / np.cos(self.ang_set_left) + ((ball_mag / np.cos(self.ang_set_left)) * np.sin(ball_ang / 2))
-            v_right = ball_mag / np.cos(self.ang_set_left) - ((ball_mag / np.cos(self.ang_set_right)) * np.sin(ball_ang / 2))
+            #v_left = ball_mag / np.cos(self.ang_set_left) + ((ball_mag / np.cos(self.ang_set_left)) * np.sin(ball_ang / 2))
+            #v_right = ball_mag / np.cos(self.ang_set_left) - ((ball_mag / np.cos(self.ang_set_right)) * np.sin(ball_ang / 2))
+            if ball_ang > 0:
+                v_left = self.ball_set.V_X / np.cos(self.ang_set_left) + ((self.ball_set.V_X / np.cos(self.ang_set_left)) * np.sin(ball_ang / 2))
+                v_right = self.ball_set.V_X / np.cos(self.ang_set_right) - ((self.ball_set.V_X / np.cos(self.ang_set_right)) * np.sin(ball_ang / 2))
+            elif ball_ang < 0:
+                v_left = self.ball_set.V_X / np.cos(self.ang_set_left) + ((self.ball_set.V_X / np.cos(self.ang_set_left)) * np.sin(ball_ang / 2))
+                v_right = self.ball_set.V_X / np.cos(self.ang_set_right) - ((self.ball_set.V_X / np.cos(self.ang_set_right)) * np.sin(ball_ang / 2))
+            else:
+                v_left = self.ball_set.V_X / np.cos(self.ang_set_left)
+                v_right = self.ball_set.V_X / np.cos(self.ang_set_rigth)
+
             print("wheel velocity L|R", v_left, v_right)
             print("Ball |V|:",ball_mag, "Ball Ang:", np.rad2deg(ball_ang))
             return v_left, v_right
+
 
         def accept_ball():
             print("accept_ball")
